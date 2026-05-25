@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matriz QC — Entrega Piloto Lotes 1–4</title>
+<style>
+  :root {
+    --c-bg: #f5f4f0;
+    --c-surface: #ffffff;
+    --c-border: #e0ddd5;
+    --c-border-strong: #c8c5bc;
+    --c-text: #1a1917;
+    --c-text-muted: #6b6860;
+    --c-text-faint: #9e9b95;
+    --c-red-bg: #fff0f0; --c-red-text: #8b1a1a; --c-red-dot: #e04040;
+    --c-amber-bg: #fff8e6; --c-amber-text: #7a4800; --c-amber-dot: #d4840a;
+    --c-green-bg: #f0f8ee; --c-green-text: #1d5c14; --c-green-dot: #4a9e36;
+    --c-blue-bg: #eef4fb; --c-blue-text: #0e3e72; --c-blue-dot: #2979c8;
+    --radius: 6px;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --c-bg: #111110; --c-surface: #1c1b19; --c-border: #2e2d2a; --c-border-strong: #3e3d39;
+      --c-text: #f0ede8; --c-text-muted: #9e9b95; --c-text-faint: #6b6860;
+      --c-red-bg: #2a1010; --c-red-text: #f5a0a0; --c-red-dot: #e04040;
+      --c-amber-bg: #221a08; --c-amber-text: #f5c06a; --c-amber-dot: #d4840a;
+      --c-green-bg: #0e1f0b; --c-green-text: #8fd878; --c-green-dot: #4a9e36;
+      --c-blue-bg: #0c1a2e; --c-blue-text: #7ab8f5; --c-blue-dot: #2979c8;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--c-bg); color: var(--c-text); font-size: 14px; line-height: 1.5; }
+
+  /* Header */
+  .header { background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 20px 24px 16px; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .header h1 { font-size: 17px; font-weight: 600; color: var(--c-text); letter-spacing: -0.3px; }
+  .header-sub { font-size: 12px; color: var(--c-text-muted); margin-top: 3px; }
+  .stats-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .stat-pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; border: 1px solid; }
+  .stat-pill.err { background: var(--c-red-bg); color: var(--c-red-text); border-color: var(--c-red-dot); }
+  .stat-pill.warn { background: var(--c-amber-bg); color: var(--c-amber-text); border-color: var(--c-amber-dot); }
+  .stat-pill.ok { background: var(--c-green-bg); color: var(--c-green-text); border-color: var(--c-green-dot); }
+  .stat-pill.neutral { background: var(--c-bg); color: var(--c-text-muted); border-color: var(--c-border-strong); }
+
+  /* Controls bar */
+  .controls { background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .controls label { font-size: 11px; color: var(--c-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
+  .filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .btn { font-size: 12px; padding: 4px 12px; border-radius: 4px; border: 1px solid var(--c-border-strong); background: transparent; color: var(--c-text-muted); cursor: pointer; font-family: var(--font); transition: all 0.1s; }
+  .btn:hover { background: var(--c-bg); color: var(--c-text); }
+  .btn.active { background: var(--c-text); color: var(--c-surface); border-color: var(--c-text); }
+  .sep { width: 1px; height: 20px; background: var(--c-border); margin: 0 4px; }
+  .search-box { flex: 1; min-width: 180px; max-width: 300px; }
+  .search-box input { width: 100%; font-size: 12px; padding: 5px 10px; border-radius: 4px; border: 1px solid var(--c-border-strong); background: var(--c-bg); color: var(--c-text); font-family: var(--font); outline: none; }
+  .search-box input:focus { border-color: var(--c-blue-dot); }
+
+  /* Legend */
+  .legend { padding: 8px 24px; display: flex; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--c-border); background: var(--c-bg); }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--c-text-muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; padding: 0 0 40px; }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  thead th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--c-text-muted); padding: 10px 12px; text-align: left; background: var(--c-surface); border-bottom: 2px solid var(--c-border-strong); position: sticky; top: 0; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--c-border); transition: background 0.1s; }
+  tbody tr:hover { background: var(--c-surface); }
+  tbody tr.hidden { display: none; }
+  td { padding: 9px 12px; vertical-align: middle; }
+  .td-lote { white-space: nowrap; }
+  .lote-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: var(--c-blue-bg); color: var(--c-blue-text); border: 1px solid var(--c-blue-dot); letter-spacing: 0.3px; }
+  .td-ctra { font-size: 11px; color: var(--c-text-muted); white-space: nowrap; }
+  .td-prod { font-size: 13px; font-weight: 500; }
+  .td-control { font-size: 12px; color: var(--c-text-muted); }
+  .td-estado { white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 4px; white-space: nowrap; }
+  .badge .dot { width: 6px; height: 6px; }
+  .badge.err { background: var(--c-red-bg); color: var(--c-red-text); }
+  .badge.ok  { background: var(--c-green-bg); color: var(--c-green-text); }
+  .badge.warn { background: var(--c-amber-bg); color: var(--c-amber-text); }
+  .td-nums { white-space: nowrap; font-size: 11px; }
+  .num { font-weight: 600; }
+  .num.err { color: var(--c-red-dot); }
+  .num.ok  { color: var(--c-green-dot); }
+  .num.warn { color: var(--c-amber-dot); }
+  .num.muted { color: var(--c-text-muted); }
+  .td-inc { text-align: center; font-size: 12px; }
+  .inc-count { font-weight: 700; color: var(--c-red-dot); }
+  .inc-zero { color: var(--c-text-faint); }
+  .td-detalle { font-size: 12px; color: var(--c-text-muted); line-height: 1.5; max-width: 380px; }
+  .no-results { text-align: center; padding: 40px; color: var(--c-text-faint); font-size: 13px; }
+
+  /* Column widths */
+  .col-lote  { width: 68px; }
+  .col-ctra  { width: 90px; }
+  .col-prod  { width: 165px; }
+  .col-ctrl  { width: 140px; }
+  .col-est   { width: 100px; }
+  .col-nums  { width: 160px; }
+  .col-inc   { width: 48px; }
+  .col-det   { width: auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>Matriz QC — Entrega Piloto · Lotes 1 – 4</h1>
+      <div class="header-sub">Actualización inventario características geométricas RCE · Fecha: 20–22/05/2026 · Delegado: Marcos Martínez</div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <span class="stat-pill neutral" id="pill-total">— registros</span>
+    <span class="stat-pill err" id="pill-err">— con ERROR</span>
+    <span class="stat-pill warn" id="pill-warn">— con WARNING</span>
+    <span class="stat-pill ok" id="pill-ok">— OK</span>
+  </div>
+</div>
+
+<div class="controls">
+  <label>Lote</label>
+  <div class="filter-group" id="fg-lote">
+    <button class="btn active" onclick="filter('lote','all',this)">Todos</button>
+    <button class="btn" onclick="filter('lote','1',this)">L1</button>
+    <button class="btn" onclick="filter('lote','2',this)">L2</button>
+    <button class="btn" onclick="filter('lote','3',this)">L3</button>
+    <button class="btn" onclick="filter('lote','4',this)">L4</button>
+  </div>
+  <div class="sep"></div>
+  <label>Estado</label>
+  <div class="filter-group" id="fg-est">
+    <button class="btn active" onclick="filter('est','all',this)">Todos</button>
+    <button class="btn" onclick="filter('est','ERROR',this)">Error</button>
+    <button class="btn" onclick="filter('est','WARNING',this)">Warning</button>
+    <button class="btn" onclick="filter('est','OK',this)">OK</button>
+  </div>
+  <div class="sep"></div>
+  <label>Producto</label>
+  <div class="filter-group" id="fg-prod">
+    <button class="btn active" onclick="filter('prod','all',this)">Todos</button>
+    <button class="btn" onclick="filter('prod','P1',this)">P1</button>
+    <button class="btn" onclick="filter('prod','P2',this)">P2</button>
+    <button class="btn" onclick="filter('prod','P3',this)">P3</button>
+    <button class="btn" onclick="filter('prod','P4',this)">P4</button>
+    <button class="btn" onclick="filter('prod','P5',this)">P5</button>
+    <button class="btn" onclick="filter('prod','P6',this)">P6</button>
+    <button class="btn" onclick="filter('prod','P7',this)">P7</button>
+  </div>
+  <div class="sep"></div>
+  <div class="search-box">
+    <input type="text" id="search" placeholder="Buscar en incidencias…" oninput="applyAll()">
+  </div>
+</div>
+
+<div class="legend">
+  <span class="legend-item"><span class="dot" style="background:var(--c-red-dot)"></span> ERROR — no conforme, requiere subsanación y nueva entrega</span>
+  <span class="legend-item"><span class="dot" style="background:var(--c-amber-dot)"></span> WARNING — aviso menor, no motivo de rechazo</span>
+  <span class="legend-item"><span class="dot" style="background:var(--c-green-dot)"></span> OK — conforme</span>
+  <span class="legend-item" style="margin-left:auto;font-size:11px;color:var(--c-text-faint)">Inc. = incidencias formales registradas</span>
+</div>
+
+<div class="table-wrap">
+<table id="mainTable">
+  <colgroup>
+    <col class="col-lote"><col class="col-ctra"><col class="col-prod">
+    <col class="col-ctrl"><col class="col-est"><col class="col-nums">
+    <col class="col-inc"><col class="col-det">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Lote</th>
+      <th>Carretera</th>
+      <th>Producto</th>
+      <th>Control</th>
+      <th>Estado</th>
+      <th>Controles (tot/OK/err/warn)</th>
+      <th title="Incidencias formales">Inc.</th>
+      <th>Incidencias principales</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+<div id="noResults" class="no-results" style="display:none">No hay registros para los filtros seleccionados.</div>
+</div>
+
+<script>
+const DATA = [
+  // ─── LOTE 1 (N-547, PK 47+000–70+000) ────────────────────────────────────
+  {lote:'1',ctra:'N-547',prod:'P1 — Nube de puntos',pkey:'P1',ctrl:'Validación formal LiDAR',est:'ERROR',tot:15,ok:12,err:3,warn:0,inc:3,
+   det:'Formato LAZ v1.2 (req. ≥1.4) en 5 ficheros; GPKG trayectorias con campos faltantes (id_captura, tipo) y CRS incorrecto (4258 vs 25830); cobertura eje 0.0%'},
+  {lote:'1',ctra:'N-547',prod:'P2 — MDS plataforma',pkey:'P2',ctrl:'F1 Validación formal',est:'ERROR',tot:24,ok:20,err:1,warn:3,inc:1,
+   det:'COG estructura incorrecta: block=128×128 sin compresión (req. bloques≥512 + DEFLATE/LZW/ZSTD)'},
+  {lote:'1',ctra:'N-547',prod:'P2 — MDS plataforma',pkey:'P2',ctrl:'F3b Calidad por tesela',est:'ERROR',tot:7,ok:5,err:2,warn:0,inc:2,
+   det:'Gradientes excesivos en 24.8% de 234 teselas (P95>2°); 1.933 px con salto vertical >0.5 m'},
+  {lote:'1',ctra:'N-547',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F1 Validación formal',est:'ERROR',tot:24,ok:20,err:2,warn:2,inc:2,
+   det:'Origen malla no múltiplo de 2 m (resto 0.13/0.93); COG sin compresión (block=128×128)'},
+  {lote:'1',ctra:'N-547',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F3b Calidad por tesela',est:'ERROR',tot:7,ok:4,err:2,warn:1,inc:2,
+   det:'Gradientes excesivos en 29.5% teselas; 42.555 px con salto >0.5 m; 3 teselas con banding (WARNING)'},
+  {lote:'1',ctra:'N-547',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F1 Validación formal',est:'ERROR',tot:29,ok:24,err:4,warn:0,inc:4,
+   det:'CRS geográfico 4258 (req. 25829); tablas extra/faltantes en plantilla (enum_sentido, enum_fiabilidad…); BBox fuera huso UTM 29'},
+  {lote:'1',ctra:'N-547',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F2 Controles específicos',est:'ERROR',tot:21,ok:13,err:4,warn:2,inc:4,
+   det:'56 saltos de continuidad altimétrica; error L_geom vs L_pk >5% en 56 de 56 segmentos; 12 solapamientos PK; controles métricos no ejecutados (CRS geográfico)'},
+  {lote:'1',ctra:'N-547',prod:'P5 — Trazado y parámetros',pkey:'P5',ctrl:'F1 Validación formal',est:'ERROR',tot:61,ok:53,err:5,warn:2,inc:5,
+   det:'CRS 4258 (req. 25829); tablas extra/faltantes; campo "sentido" faltante en tabla carril; BBox fuera huso UTM; enum_sentido no permitido en plantilla'},
+  {lote:'1',ctra:'N-547',prod:'P6 — Elementos entorno',pkey:'P6',ctrl:'F1 Validación formal',est:'ERROR',tot:22,ok:15,err:4,warn:1,inc:4,
+   det:'CRS 4258 (req. 25830); tablas extra/faltantes; 1 geometría inválida (WARNING); BBox fuera huso UTM 30'},
+  {lote:'1',ctra:'N-547',prod:'P7 — Arista ext. explanación',pkey:'P7',ctrl:'F1 Validación formal',est:'ERROR',tot:20,ok:13,err:5,warn:0,inc:5,
+   det:'CRS 4258 (req. 25830); tablas extra/faltantes; campos obligatorios faltantes (fiabilidad, comentarios); BBox fuera huso UTM 30'},
+  // ─── LOTE 2 (A-3, PK 3+200–35+300) ──────────────────────────────────────
+  {lote:'2',ctra:'A-3',prod:'P1 — Nube de puntos',pkey:'P1',ctrl:'Validación formal LiDAR',est:'ERROR',tot:14,ok:9,err:3,warn:1,inc:3,
+   det:'Formato LAZ v1.1 (req. ≥1.4) en 51 ficheros; GPKG trayectorias no encontrado; cobertura eje no evaluable (fichero faltante)'},
+  {lote:'2',ctra:'A-3',prod:'P2 — MDS plataforma',pkey:'P2',ctrl:'F1 Validación formal',est:'OK',tot:24,ok:24,err:0,warn:0,inc:0,
+   det:'Todos los controles conformes. CRS 25830 correcto, COG con DEFLATE (block=512×512), pirámides correctas (8 niveles)'},
+  {lote:'2',ctra:'A-3',prod:'P2 — MDS plataforma',pkey:'P2',ctrl:'F3b Calidad por tesela',est:'ERROR',tot:7,ok:4,err:3,warn:0,inc:3,
+   det:'Gradientes excesivos en 6.3% de 1.044 teselas; 2.211 px con salto >0.5 m; 768 px con artefacto >5 m'},
+  {lote:'2',ctra:'A-3',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F1 Validación formal',est:'ERROR',tot:24,ok:23,err:1,warn:0,inc:1,
+   det:'Origen malla no múltiplo de 2 m: origin=(443879.75, 4473227.25), paso=2 m, resto=(0.25, 0.75)'},
+  {lote:'2',ctra:'A-3',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F3b Calidad por tesela',est:'ERROR',tot:7,ok:4,err:3,warn:0,inc:3,
+   det:'Gradientes excesivos en 7.1% de 1.248 teselas; 414.044 px con salto >0.5 m; 2.115 px con artefacto >5 m'},
+  {lote:'2',ctra:'A-3',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F1 Validación formal',est:'OK',tot:32,ok:29,err:0,warn:2,inc:0,
+   det:'Sin errores. CRS 25830 correcto, tablas completas. Avisos (WARNING): ruta carpeta no estándar; 2 campos extra (layer, path)'},
+  {lote:'2',ctra:'A-3',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F2 Controles específicos',est:'ERROR',tot:23,ok:10,err:8,warn:5,inc:8,
+   det:'54 huecos PK; 160 desconexiones geométricas en 220 pares evaluados; error L_geom/L_pk >5% en 126 de 246 segmentos; 4 saltos altimétricos; campo "tipo" faltante en capa trayectoria; 2 ramales fragmentados'},
+  {lote:'2',ctra:'A-3',prod:'P5 — Trazado y parámetros',pkey:'P5',ctrl:'F1 Validación formal',est:'OK',tot:74,ok:72,err:0,warn:1,inc:0,
+   det:'Sin errores. CRS 25830 correcto, todas las tablas obligatorias presentes (15). Aviso: 2 campos extra (layer, path)'},
+  {lote:'2',ctra:'A-3',prod:'P6 — Elementos entorno',pkey:'P6',ctrl:'F1+F2 Validación',est:'ERROR',tot:3,ok:1,err:2,warn:0,inc:2,
+   det:'GeoPackage ilegible (no contiene capas); capa "entorno" no disponible o vacía'},
+  {lote:'2',ctra:'A-3',prod:'P7 — Arista ext. explanación',pkey:'P7',ctrl:'F1+F2 Validación',est:'ERROR',tot:2,ok:0,err:2,warn:0,inc:2,
+   det:'GeoPackage ilegible; capa "arista_ext_explanacion" no disponible o vacía'},
+  // ─── LOTE 3 (N-230, PK 6+748–29+068) ─────────────────────────────────────
+  {lote:'3',ctra:'N-230',prod:'P1 — Nube de puntos',pkey:'P1',ctrl:'Validación formal LiDAR',est:'ERROR',tot:15,ok:13,err:2,warn:0,inc:2,
+   det:'GPKG trayectorias con campo faltante (id_captura) y CRS incorrecto (4258 vs 25830); cobertura eje 0.0% (0/1 m cubierto)'},
+  {lote:'3',ctra:'N-230',prod:'P2 — MDS plataforma',pkey:'P2',ctrl:'F1 Validación formal',est:'ERROR',tot:24,ok:21,err:1,warn:2,inc:1,
+   det:'COG estructura incorrecta: block=128×128 con LZW pero bloques insuficientes (<512 px); origen malla no múltiplo de 0.5 m (WARNING)'},
+  {lote:'3',ctra:'N-230',prod:'P2 — MDS plataforma',pkey:'P2',ctrl:'F3b Calidad por tesela',est:'ERROR',tot:7,ok:3,err:3,warn:1,inc:3,
+   det:'Gradientes excesivos en 16.3% de 301 teselas; 2.961 px con salto >0.5 m; 139 px con artefacto >5 m; 1 tesela con banding (WARNING)'},
+  {lote:'3',ctra:'N-230',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F1 Validación formal',est:'ERROR',tot:24,ok:21,err:2,warn:1,inc:2,
+   det:'Origen malla no múltiplo de 2 m (resto 0.43/0.46); COG estructura con bloques <512 px (block=128×128)'},
+  {lote:'3',ctra:'N-230',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F3b Calidad por tesela',est:'ERROR',tot:7,ok:5,err:2,warn:0,inc:2,
+   det:'Gradientes excesivos en 19.8% de 344 teselas; 50.916 px con salto >0.5 m'},
+  {lote:'3',ctra:'N-230',prod:'P3 — MDE integrado',pkey:'P3',ctrl:'F3c Continuidad MDS-MDE',est:'ERROR',tot:11,ok:2,err:8,warn:0,inc:8,
+   det:'Empalme borde MDS-MDE P95=0.56 m (req. ≤0.30 m); gradientes excesivos en MDE y MDS; 190.636 gaps internos en MDE; 2.961 saltos locales en MDS'},
+  {lote:'3',ctra:'N-230',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F1 Validación formal',est:'ERROR',tot:29,ok:22,err:3,warn:3,inc:3,
+   det:'CRS 4258 (req. 25831); fechas con timezone (req. naive); BBox fuera huso UTM 31; PKs con >3 decimales en 623/673 segmentos (WARNING)'},
+  {lote:'3',ctra:'N-230',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F2 Controles específicos',est:'ERROR',tot:16,ok:6,err:6,warn:3,inc:6,
+   det:'131 incoherencias PK (38 dir + 93 contradir); 105 ejes con paridad num_calzada incoherente; 1.348 saltos altimétricos; error L_geom/L_pk >5% en 635/635 segmentos; 1 ramal fragmentado; capa trayectoria no entregada'},
+  {lote:'3',ctra:'N-230',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'Controles topológicos',est:'ERROR',tot:6,ok:1,err:1,warn:4,inc:1,
+   det:'673 segmentos con longitud <0.5 m (ERROR); 4 autointersecciones; 10 geometrías duplicadas; 44 spikes; 15 pares cruzados (WARNING)'},
+  {lote:'3',ctra:'N-230',prod:'P5 — Trazado y parámetros',pkey:'P5',ctrl:'F1 Validación formal',est:'ERROR',tot:63,ok:57,err:3,warn:2,inc:3,
+   det:'CRS 4258 (req. 25831); fechas con timezone; BBox fuera huso UTM 31'},
+  {lote:'3',ctra:'N-230',prod:'P5 — Trazado y parámetros',pkey:'P5',ctrl:'F2 Controles específicos',est:'ERROR',tot:52,ok:19,err:5,warn:6,inc:5,
+   det:'1.046 PK duplicados; 837 valores ancho carril fuera de rango [0.01–4.0 m]; 771 registros con incoherencia plataforma vs calzada+arcenes; 2.858 puntos con x,y desviados de la geometría; capa trayectoria no entregada'},
+  {lote:'3',ctra:'N-230',prod:'P6 — Elementos entorno',pkey:'P6',ctrl:'F1+F2+Topológico',est:'ERROR',tot:11,ok:3,err:6,warn:2,inc:6,
+   det:'Plantilla desconocida; tabla "P6_Entorno" no permitida; faltan 12 tablas obligatorias (carretera, entorno, enums…); capa "entorno" no encontrada; tabla carretera ausente'},
+  {lote:'3',ctra:'N-230',prod:'P7 — Arista ext. explanación',pkey:'P7',ctrl:'F1+F2+Topológico',est:'ERROR',tot:3,ok:0,err:3,warn:0,inc:3,
+   det:'GeoPackage ilegible; capa "arista_ext_explanacion" no disponible o vacía en F2 y controles topológicos'},
+  // ─── LOTE 4 (carretera no declarada) ─────────────────────────────────────
+  {lote:'4',ctra:'—',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F1 Validación formal',est:'OK',tot:33,ok:33,err:0,warn:0,inc:0,
+   det:'Todos los controles conformes. CRS 25830 correcto, estructura GeoPackage completa, geometrías 3D válidas, atributos íntegros'},
+  {lote:'4',ctra:'—',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'F2 Controles específicos',est:'ERROR',tot:27,ok:14,err:13,warn:3,inc:13,
+   det:'94 incoherencias PK (21 impar + 73 par + 2 longitud cero); 106 solapamientos PK (93 reales); capa trayectoria ausente; múltiples controles de continuidad y encadenamiento con incidencias'},
+  {lote:'4',ctra:'—',prod:'P4 — Ejes longitudinales',pkey:'P4',ctrl:'Controles topológicos',est:'OK',tot:6,ok:6,err:0,warn:6,inc:0,
+   det:'Sin errores. Avisos (WARNING): autointersecciones, geometrías duplicadas, spikes, cruces lineales — todos menores'},
+  {lote:'4',ctra:'—',prod:'P5 — Trazado y parámetros',pkey:'P5',ctrl:'F1 Validación formal',est:'ERROR',tot:78,ok:72,err:1,warn:4,inc:1,
+   det:'Faltan 3 tablas obligatorias (enum_tipo_entorno, enum_tipo_linea, enum_tipo_trayectoria); nombre de tabla con case distinto "Trazado" (req. "trazado") — WARNING'},
+  {lote:'4',ctra:'—',prod:'P5 — Trazado y parámetros',pkey:'P5',ctrl:'F2 Controles específicos',est:'ERROR',tot:54,ok:16,err:7,warn:11,inc:7,
+   det:'2.532 radios fuera de rango [1–3000] (incluidos 2.532 radios=0 inválidos); 606 decrementos/incrementos anómalos de PK; 638 anchos de carril fuera de [0.01–4.0 m]; 486 incoherencias plataforma vs calzada+arcenes; 2.062 plataformas con paridad incoherente; 3.063 trazados sin mediana id_mediana=1'},
+];
+
+const filters = { lote:'all', est:'all', prod:'all' };
+
+function renderRow(r) {
+  const estClass = r.est === 'ERROR' ? 'err' : r.est === 'OK' ? 'ok' : 'warn';
+  const dotColor = r.est === 'ERROR' ? 'var(--c-red-dot)' : r.est === 'OK' ? 'var(--c-green-dot)' : 'var(--c-amber-dot)';
+  const incEl = r.inc > 0
+    ? `<span class="inc-count">${r.inc}</span>`
+    : `<span class="inc-zero">0</span>`;
+  return `<tr data-lote="${r.lote}" data-est="${r.est}" data-prod="${r.pkey}" data-det="${r.det.toLowerCase()} ${r.prod.toLowerCase()} ${r.ctrl.toLowerCase()}">
+    <td class="td-lote"><span class="lote-badge">L${r.lote}</span></td>
+    <td class="td-ctra">${r.ctra}</td>
+    <td class="td-prod">${r.prod}</td>
+    <td class="td-control">${r.ctrl}</td>
+    <td class="td-estado"><span class="badge ${estClass}"><span class="dot" style="background:${dotColor}"></span>${r.est}</span></td>
+    <td class="td-nums">
+      <span class="num muted">${r.tot}</span> ·
+      <span class="num ok">${r.ok}</span> ok ·
+      <span class="num err">${r.err}</span> err ·
+      <span class="num warn">${r.warn}</span> warn
+    </td>
+    <td class="td-inc">${incEl}</td>
+    <td class="td-detalle">${r.det}</td>
+  </tr>`;
+}
+
+function buildTable() {
+  document.getElementById('tbody').innerHTML = DATA.map(renderRow).join('');
+}
+
+function applyAll() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let vis = 0, errC = 0, warnC = 0, okC = 0;
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    const matchLote = filters.lote === 'all' || tr.dataset.lote === filters.lote;
+    const matchEst  = filters.est  === 'all' || tr.dataset.est  === filters.est;
+    const matchProd = filters.prod === 'all' || tr.dataset.prod === filters.prod;
+    const matchQ    = !q || tr.dataset.det.includes(q);
+    const show = matchLote && matchEst && matchProd && matchQ;
+    tr.classList.toggle('hidden', !show);
+    if (show) {
+      vis++;
+      if (tr.dataset.est === 'ERROR') errC++;
+      else if (tr.dataset.est === 'WARNING') warnC++;
+      else okC++;
+    }
+  });
+  document.getElementById('noResults').style.display = vis === 0 ? 'block' : 'none';
+  document.getElementById('pill-total').textContent = `${vis} registros`;
+  document.getElementById('pill-err').textContent   = `${errC} con ERROR`;
+  document.getElementById('pill-warn').textContent  = `${warnC} con WARNING`;
+  document.getElementById('pill-ok').textContent    = `${okC} OK`;
+}
+
+function filter(type, val, btn) {
+  filters[type] = val;
+  const group = btn.closest('.filter-group');
+  group.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyAll();
+}
+
+buildTable();
+applyAll();
+</script>
+</body>
+</html>
